@@ -1,0 +1,4 @@
+We are looking for a Data Scientist.
+Required skills: Python, SQL, Machine Learning.
+Experience in Deep Learning and cloud platforms like AWS is preferred.
+Candidate should have experience in end-to-end model deployment.

@@ -1,0 +1,4 @@
+I am a Data Scientist with 3.5 years of experience.
+I have worked as Data Analyst and Data Engineer.
+Skills include Python, SQL, Machine Learning, Deep Learning, AWS.
+I have experience with data pipelines, model building and deployment.
