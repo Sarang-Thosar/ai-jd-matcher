@@ -8,11 +8,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 import os
 from dotenv import load_dotenv
 # from openai import OpenAI
-from mistralai import Mistral
 from fastapi import UploadFile, File, Form
 from pypdf import PdfReader
 from io import BytesIO
 import time
+
+mistral_client = None
+
 
 def mistral_call_with_retry(call_fn, retries=1, delay=1):
     last_error = None
@@ -26,9 +28,6 @@ def mistral_call_with_retry(call_fn, retries=1, delay=1):
 
 load_dotenv()
 # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
-mistral_client = Mistral(api_key=MISTRAL_API_KEY)
-
 
 
 app = FastAPI()
@@ -130,6 +129,10 @@ async def extract_text_from_pdf_file(file: UploadFile) -> str:
 #     return response.choices[0].message.content
 
 def generate_explanation(resume_text, jd_text, match_percentage):
+    from mistralai import Mistral
+    global mistral_client
+    if mistral_client is None:
+        mistral_client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
     try:
         response = mistral_call_with_retry(
             lambda: mistral_client.chat.complete(
@@ -167,6 +170,10 @@ Explain the match in bullet points:
 
 
 def generate_interview_questions(resume_text, jd_text):
+    from mistralai import Mistral
+    global mistral_client
+    if mistral_client is None:
+        mistral_client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
     try:
         response = mistral_call_with_retry(
             lambda: mistral_client.chat.complete(
