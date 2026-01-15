@@ -1,9 +1,9 @@
-name: Build & Push Docker Image
+name: Build & Push Docker Image (Staging)
 
 on:
   push:
     branches:
-      - main  
+      - staging
 
 jobs:
   build:
@@ -32,14 +32,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
+      - name: Build Docker image (staging)
         run: |
           docker build \
-            -t sarangthosar/ai-jd-matcher:v1.2.0 \
-            -t sarangthosar/ai-jd-matcher:latest .
+            -t sarangthosar/ai-jd-matcher:staging .
 
-      - name: Push Docker image
+      - name: Push Docker image (staging)
         run: |
-          docker push sarangthosar/ai-jd-matcher:v1.2.0
-          docker push sarangthosar/ai-jd-matcher:latest
-
+          docker push sarangthosar/ai-jd-matcher:staging
