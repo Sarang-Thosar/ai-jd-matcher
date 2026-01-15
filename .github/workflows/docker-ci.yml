@@ -1,12 +1,12 @@
-name: Build & Push Docker Image
+name: Build, Push & Deploy (Production)
 
 on:
   push:
     branches:
-      - main  
+      - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -43,3 +43,24 @@ jobs:
           docker push sarangthosar/ai-jd-matcher:v1.2.0
           docker push sarangthosar/ai-jd-matcher:latest
 
+      # 🚀 PRODUCTION DEPLOY
+      - name: Deploy to Production EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_EC2_HOST }}
+          username: ${{ secrets.PROD_EC2_USER }}
+          key: ${{ secrets.PROD_EC2_SSH_KEY }}
+          script: |
+            docker pull sarangthosar/ai-jd-matcher:v1.2.0
+
+            docker stop ai-jd-prod || true
+            docker rm ai-jd-prod || true
+
+            docker run -d \
+              --name ai-jd-prod \
+              -p 8000:8000 \
+              --env-file /home/ubuntu/.env \
+              --restart always \
+              sarangthosar/ai-jd-matcher:v1.2.0
+
+            docker image prune -f
