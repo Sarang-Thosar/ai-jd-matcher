@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi import HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from fastapi import Request
+
 from typing_extensions import Annotated
 from pydantic import BaseModel, Field
 import re
@@ -31,6 +35,13 @@ load_dotenv()
 
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="ui/static"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
+def home():
+    with open("ui/templates/index.html") as f:
+        return f.read()
+
 
 @app.get("/health")
 def health_check():
