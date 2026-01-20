@@ -8,9 +8,9 @@
 </head>
 
 <body>
-  <div class="container">
-    <h1>🤖 AI JD Matcher</h1>
-    <p class="subtitle">Match Resume with Job Description</p>
+  <div class="header">
+    <h1>AI Resume - JD Matcher</h1>
+    <p class="subtitle">Smart resume matching powered by AI</p>
 
     <div class="tabs">
       <button onclick="showTab('text')" class="active">Text Match</button>
@@ -26,10 +26,15 @@
 
     <!-- PDF MATCH -->
     <div id="pdf" class="tab-content hidden">
-      <input type="file" id="pdfFile" accept=".pdf" />
-      <textarea id="jdPdf" placeholder="Paste Job Description"></textarea>
-      <button onclick="submitPDF()">Match PDF</button>
+        <label><b>Resume PDF</b></label>
+        <input type="file" id="resumePdf" accept=".pdf" />
+
+        <label><b>Job Description PDF</b></label>
+        <input type="file" id="jdPdfFile" accept=".pdf" />
+
+        <button onclick="submitPDF()">Match PDF</button>
     </div>
+    
 
     <div id="result" class="result hidden"></div>
   </div>

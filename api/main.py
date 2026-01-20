@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi import Request
+from fastapi.templating import Jinja2Templates
 
 from typing_extensions import Annotated
 from pydantic import BaseModel, Field
@@ -36,11 +37,20 @@ load_dotenv()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="ui/static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
 
 @app.get("/", response_class=HTMLResponse)
 def home():
     with open("ui/templates/index.html") as f:
         return f.read()
+
+@app.get("/")
+def serve_ui(request: Request):
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request}
+    )
 
 
 @app.get("/health")

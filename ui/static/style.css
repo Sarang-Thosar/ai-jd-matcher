@@ -1,20 +1,39 @@
 body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(120deg, #1e3c72, #2a5298);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
   color: #fff;
   margin: 0;
   padding: 0;
 }
 
-.container {
-  max-width: 700px;
-  margin: auto;
-  padding: 20px;
+.header {
+  text-align: center;
+  padding: 30px 10px;
+  margin-bottom: 20px;
 }
 
-h1 {
-  text-align: center;
+.header h1 {
+  font-size: 36px;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
+
+.header p {
+  margin-top: 8px;
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.container {
+  max-width: 750px;
+  margin: auto;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
 
 .subtitle {
   text-align: center;
@@ -69,4 +88,21 @@ button {
 
 .hidden {
   display: none;
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+input[type="file"] {
+  display: block;
+  margin-bottom: 15px;
+  color: #fff;
+}
+
+.tab-content {
+  text-align: left;
 }

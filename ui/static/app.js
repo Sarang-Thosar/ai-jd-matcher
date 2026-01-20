@@ -23,12 +23,17 @@ async function submitText() {
 }
 
 async function submitPDF() {
-  const file = document.getElementById("pdfFile").files[0];
-  const jd = document.getElementById("jdPdf").value;
+  const resumeFile = document.getElementById("resumePdf").files[0];
+  const jdFile = document.getElementById("jdPdfFile").files[0];
+
+  if (!resumeFile || !jdFile) {
+    alert("Please upload both Resume and JD PDFs");
+    return;
+  }
 
   const form = new FormData();
-  form.append("file", file);
-  form.append("jd", jd);
+  form.append("resume_pdf", resumeFile);
+  form.append("jd_pdf", jdFile);
 
   const res = await fetch("/match-pdf", {
     method: "POST",
@@ -38,6 +43,7 @@ async function submitPDF() {
   const data = await res.json();
   showResult(data);
 }
+
 
 function showResult(data) {
   const result = document.getElementById("result");
