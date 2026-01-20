@@ -15,34 +15,34 @@ async function submitText() {
   const res = await fetch("/match", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ resume, jd })
+    body: JSON.stringify({
+        resume_text: resume,
+        jd_text: jd
+})
+
   });
 
   const data = await res.json();
   showResult(data);
 }
 
-async function submitPDF() {
-  const resumeFile = document.getElementById("resumePdf").files[0];
-  const jdFile = document.getElementById("jdPdfFile").files[0];
+async function submitText() {
+  const resume = document.getElementById("resume").value;
+  const jd = document.getElementById("jd").value;
 
-  if (!resumeFile || !jdFile) {
-    alert("Please upload both Resume and JD PDFs");
-    return;
-  }
-
-  const form = new FormData();
-  form.append("resume_pdf", resumeFile);
-  form.append("jd_pdf", jdFile);
-
-  const res = await fetch("/match-pdf", {
+  const res = await fetch("/match", {
     method: "POST",
-    body: form
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      resume_text: resume,
+      jd_text: jd
+    })
   });
 
   const data = await res.json();
   showResult(data);
 }
+
 
 
 function showResult(data) {
