@@ -21,6 +21,18 @@ import concurrent.futures
 
 mistral_client = None
 
+def extract_mistral_text(response) -> str:
+    """
+    Safely extract text from Mistral chat response
+    """
+    try:
+        content = response.choices[0].message.content
+        if isinstance(content, list) and len(content) > 0:
+            return content[0].text
+        raise ValueError("Empty Mistral response content")
+    except Exception as e:
+        raise RuntimeError(f"Mistral response parse failed: {e}")
+
 
 def mistral_call_with_retry(call_fn, retries=1, delay=1, timeout=25):
     last_error = None
@@ -197,8 +209,8 @@ Explain the match in bullet points:
             )
         )
 
-        # ✅ FIXED RESPONSE PARSING
-        return response.choices[0].message.content[0].text
+        text = extract_mistral_text(response)
+        return text or "Explanation unavailable (empty LLM response)."
 
     except Exception as e:
         print("🔥 Explanation LLM error:", repr(e))
@@ -209,8 +221,10 @@ Explain the match in bullet points:
 def generate_interview_questions(resume_text, jd_text):
     from mistralai import Mistral
     global mistral_client
+
     if mistral_client is None:
         mistral_client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+
     try:
         response = mistral_call_with_retry(
             lambda: mistral_client.chat.complete(
@@ -237,11 +251,14 @@ Generate:
                 temperature=0.4
             )
         )
-        return response.choices[0].message.content
+
+        text = extract_mistral_text(response)
+        return text or "Interview questions unavailable (empty LLM response)."
 
     except Exception as e:
         print("🔥 Interview LLM error:", repr(e))
         return "Interview questions unavailable (LLM error)."
+
 
 
 
