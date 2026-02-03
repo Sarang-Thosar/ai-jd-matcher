@@ -17,19 +17,30 @@ from fastapi import UploadFile, File, Form
 from pypdf import PdfReader
 from io import BytesIO
 import time
+import concurrent.futures
 
 mistral_client = None
 
 
-def mistral_call_with_retry(call_fn, retries=1, delay=1):
+def mistral_call_with_retry(call_fn, retries=1, delay=1, timeout=25):
     last_error = None
+
     for _ in range(retries + 1):
         try:
-            return call_fn()
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(call_fn)
+                return future.result(timeout=timeout)
+
+        except concurrent.futures.TimeoutError:
+            last_error = TimeoutError("LLM request timed out")
+
         except Exception as e:
             last_error = e
-            time.sleep(delay)
+
+        time.sleep(delay)
+
     raise last_error
+
 
 load_dotenv()
 # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -153,8 +164,10 @@ async def extract_text_from_pdf_file(file: UploadFile) -> str:
 def generate_explanation(resume_text, jd_text, match_percentage):
     from mistralai import Mistral
     global mistral_client
+
     if mistral_client is None:
         mistral_client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+
     try:
         response = mistral_call_with_retry(
             lambda: mistral_client.chat.complete(
@@ -183,7 +196,9 @@ Explain the match in bullet points:
                 temperature=0.3
             )
         )
-        return response.choices[0].message.content
+
+        # ✅ FIXED RESPONSE PARSING
+        return response.choices[0].message.content[0].text
 
     except Exception as e:
         print("🔥 Explanation LLM error:", repr(e))
