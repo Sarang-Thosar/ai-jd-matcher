@@ -35,6 +35,9 @@ def extract_mistral_text(response) -> str:
 
 
 def mistral_call_with_retry(call_fn, retries=1, delay=1, timeout=25):
+    import time
+    import concurrent.futures
+
     last_error = None
 
     for _ in range(retries + 1):
@@ -54,8 +57,10 @@ def mistral_call_with_retry(call_fn, retries=1, delay=1, timeout=25):
     raise last_error
 
 
+
 load_dotenv()
 # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+assert os.getenv("MISTRAL_API_KEY"), "MISTRAL_API_KEY missing"
 
 
 app = FastAPI()
@@ -184,10 +189,9 @@ def generate_explanation(resume_text, jd_text, match_percentage):
         response = mistral_call_with_retry(
             lambda: mistral_client.chat.complete(
                 model="mistral-small-latest",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": f"""
+                messages=[{
+                    "role": "user",
+                    "content": f"""
 You are an AI hiring assistant.
 
 Resume:
@@ -203,18 +207,18 @@ Explain the match in bullet points:
 - Missing skills
 - Summary
 """
-                    }
-                ],
+                }],
                 temperature=0.3
             )
         )
 
-        text = extract_mistral_text(response)
-        return text or "Explanation unavailable (empty LLM response)."
+        # ✅ CORRECT parsing for mistralai SDK
+        return response.choices[0].message.content
 
     except Exception as e:
         print("🔥 Explanation LLM error:", repr(e))
-        return "Explanation unavailable (LLM error)."
+        return "Explanation temporarily unavailable."
+
 
 
 
@@ -229,10 +233,9 @@ def generate_interview_questions(resume_text, jd_text):
         response = mistral_call_with_retry(
             lambda: mistral_client.chat.complete(
                 model="mistral-small-latest",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": f"""
+                messages=[{
+                    "role": "user",
+                    "content": f"""
 You are a technical interviewer.
 
 Resume:
@@ -246,23 +249,16 @@ Generate:
 - 2 scenario questions
 - 2 skill-gap questions
 """
-                    }
-                ],
+                }],
                 temperature=0.4
             )
         )
 
-        text = extract_mistral_text(response)
-        return text or "Interview questions unavailable (empty LLM response)."
+        return response.choices[0].message.content
 
     except Exception as e:
         print("🔥 Interview LLM error:", repr(e))
-        return "Interview questions unavailable (LLM error)."
-
-
-
-
-
+        return "Interview questions temporarily unavailable."
 
 
 
