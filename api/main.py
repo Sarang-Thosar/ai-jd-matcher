@@ -60,7 +60,7 @@ def mistral_call_with_retry(call_fn, retries=1, delay=1, timeout=25):
 
 load_dotenv()
 # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-assert os.getenv("MISTRAL_API_KEY"), "MISTRAL_API_KEY missing"
+
 
 
 app = FastAPI()
@@ -178,16 +178,27 @@ async def extract_text_from_pdf_file(file: UploadFile) -> str:
 #     )
 #     return response.choices[0].message.content
 
-def generate_explanation(resume_text, jd_text, match_percentage):
+
+def get_mistral_client():
     from mistralai import Mistral
     global mistral_client
 
-    if mistral_client is None:
-        mistral_client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+    api_key = os.getenv("MISTRAL_API_KEY")
+    if not api_key:
+        raise RuntimeError("MISTRAL_API_KEY not set")
 
+    if mistral_client is None:
+        mistral_client = Mistral(api_key=api_key)
+
+    return mistral_client
+
+
+def generate_explanation(resume_text, jd_text, match_percentage):
     try:
+        client = get_mistral_client()
+
         response = mistral_call_with_retry(
-            lambda: mistral_client.chat.complete(
+            lambda: client.chat.complete(
                 model="mistral-small-latest",
                 messages=[{
                     "role": "user",
@@ -212,7 +223,6 @@ Explain the match in bullet points:
             )
         )
 
-        # ✅ CORRECT parsing for mistralai SDK
         return response.choices[0].message.content
 
     except Exception as e:
@@ -221,17 +231,12 @@ Explain the match in bullet points:
 
 
 
-
 def generate_interview_questions(resume_text, jd_text):
-    from mistralai import Mistral
-    global mistral_client
-
-    if mistral_client is None:
-        mistral_client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
-
     try:
+        client = get_mistral_client()
+
         response = mistral_call_with_retry(
-            lambda: mistral_client.chat.complete(
+            lambda: client.chat.complete(
                 model="mistral-small-latest",
                 messages=[{
                     "role": "user",
@@ -259,6 +264,7 @@ Generate:
     except Exception as e:
         print("🔥 Interview LLM error:", repr(e))
         return "Interview questions temporarily unavailable."
+
 
 
 
