@@ -1,5 +1,10 @@
 from fastapi import FastAPI
 from fastapi import HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
+
 from typing_extensions import Annotated
 from pydantic import BaseModel, Field
 import re
@@ -12,25 +17,70 @@ from fastapi import UploadFile, File, Form
 from pypdf import PdfReader
 from io import BytesIO
 import time
+import concurrent.futures
 
 mistral_client = None
 
+def extract_mistral_text(response) -> str:
+    """
+    Safely extract text from Mistral chat response
+    """
+    try:
+        content = response.choices[0].message.content
+        if isinstance(content, list) and len(content) > 0:
+            return content[0].text
+        raise ValueError("Empty Mistral response content")
+    except Exception as e:
+        raise RuntimeError(f"Mistral response parse failed: {e}")
 
-def mistral_call_with_retry(call_fn, retries=1, delay=1):
+
+def mistral_call_with_retry(call_fn, retries=1, delay=1, timeout=25):
+    import time
+    import concurrent.futures
+
     last_error = None
+
     for _ in range(retries + 1):
         try:
-            return call_fn()
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(call_fn)
+                return future.result(timeout=timeout)
+
+        except concurrent.futures.TimeoutError:
+            last_error = TimeoutError("LLM request timed out")
+
         except Exception as e:
             last_error = e
-            time.sleep(delay)
+
+        time.sleep(delay)
+
     raise last_error
+
+
 
 load_dotenv()
 # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
+
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="ui/static"), name="static")
+templates = Jinja2Templates(directory="ui/templates")
+
+
+# @app.get("/", response_class=HTMLResponse)
+# def home():
+#     with open("ui/templates/index.html") as f:
+#         return f.read()
+
+@app.get("/", response_class=HTMLResponse)
+def serve_ui(request: Request):
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request}
+    )
+
+
 
 @app.get("/health")
 def health_check():
@@ -128,19 +178,31 @@ async def extract_text_from_pdf_file(file: UploadFile) -> str:
 #     )
 #     return response.choices[0].message.content
 
-def generate_explanation(resume_text, jd_text, match_percentage):
+
+def get_mistral_client():
     from mistralai import Mistral
     global mistral_client
+
+    api_key = os.getenv("MISTRAL_API_KEY")
+    if not api_key:
+        raise RuntimeError("MISTRAL_API_KEY not set")
+
     if mistral_client is None:
-        mistral_client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
+        mistral_client = Mistral(api_key=api_key)
+
+    return mistral_client
+
+
+def generate_explanation(resume_text, jd_text, match_percentage):
     try:
+        client = get_mistral_client()
+
         response = mistral_call_with_retry(
-            lambda: mistral_client.chat.complete(
+            lambda: client.chat.complete(
                 model="mistral-small-latest",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": f"""
+                messages=[{
+                    "role": "user",
+                    "content": f"""
 You are an AI hiring assistant.
 
 Resume:
@@ -156,32 +218,29 @@ Explain the match in bullet points:
 - Missing skills
 - Summary
 """
-                    }
-                ],
+                }],
                 temperature=0.3
             )
         )
+
         return response.choices[0].message.content
 
     except Exception as e:
         print("🔥 Explanation LLM error:", repr(e))
-        return "Explanation unavailable (LLM error)."
+        return "Explanation temporarily unavailable."
 
 
 
 def generate_interview_questions(resume_text, jd_text):
-    from mistralai import Mistral
-    global mistral_client
-    if mistral_client is None:
-        mistral_client = Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
     try:
+        client = get_mistral_client()
+
         response = mistral_call_with_retry(
-            lambda: mistral_client.chat.complete(
+            lambda: client.chat.complete(
                 model="mistral-small-latest",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": f"""
+                messages=[{
+                    "role": "user",
+                    "content": f"""
 You are a technical interviewer.
 
 Resume:
@@ -195,19 +254,16 @@ Generate:
 - 2 scenario questions
 - 2 skill-gap questions
 """
-                    }
-                ],
+                }],
                 temperature=0.4
             )
         )
+
         return response.choices[0].message.content
 
     except Exception as e:
         print("🔥 Interview LLM error:", repr(e))
-        return "Interview questions unavailable (LLM error)."
-
-
-
+        return "Interview questions temporarily unavailable."
 
 
 

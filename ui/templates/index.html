@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI JD Matcher</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="/static/style.css" rel="stylesheet" />
+</head>
+
+<body>
+  <div class="header">
+    <h1>AI Resume - JD Matcher</h1>
+    <p class="subtitle">Smart resume matching powered by AI</p>
+
+    <div class="tabs">
+      <button onclick="showTab('text')" class="active">Text Match</button>
+      <button onclick="showTab('pdf')">PDF Match</button>
+    </div>
+
+    <!-- TEXT MATCH -->
+    <div id="text" class="tab-content">
+      <textarea id="resume" placeholder="Paste Resume Text"></textarea>
+      <textarea id="jd" placeholder="Paste Job Description"></textarea>
+      <button onclick="submitText()">Match</button>
+    </div>
+
+    <!-- PDF MATCH -->
+    <div id="pdf" class="tab-content hidden">
+        <label><b>Resume PDF</b></label>
+        <input type="file" id="resumePdf" accept=".pdf" />
+
+        <label><b>Job Description PDF</b></label>
+        <input type="file" id="jdPdfFile" accept=".pdf" />
+
+        <button onclick="submitPDF()">Match PDF</button>
+    </div>
+    
+
+    <div id="result" class="result hidden"></div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
